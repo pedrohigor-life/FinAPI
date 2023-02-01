@@ -19,6 +19,18 @@ function verifyIfExistsAccount(request, response, next) {
     return next();
 };
 
+function getBalance(statment) {
+    const balance = statment.reduce((acc, operation) => {
+        if (operation.type === 'credit') {
+            return acc + operation.amount
+        } else {
+            return acc - operation.amount
+        }
+    }, 0)
+
+    return balance;
+}
+
 app.post('/finapi/accounts', (request, response) => {
     const { name, cpf } = request.body;
 
@@ -43,14 +55,20 @@ app.post('/finapi/accounts/transaction', verifyIfExistsAccount, (request, respon
     const { account } = request;
     const { amount, description, type } = request.body;
 
-    const transaction = {
+    if (type === 'debit') {
+        if (amount > account.balance) {
+            return response.status(400).json({ error: 'Insufficient founds!' })
+        }
+    }
+
+    account.statment.push({
         amount,
         description,
         type,
         created_at: new Date()
-    }
+    });
 
-    account.statment.push(transaction);
+    account.balance = getBalance(account.statment);
 
     return response.status(201).send();
 });
@@ -61,9 +79,26 @@ app.get('/finapi/accounts/statment', verifyIfExistsAccount, (request, response) 
     return response.status(200).json({ statment: account.statment });
 });
 
-app.get('/finapi/accounts', (request, response) => {
+// 1# Firs option list account, with using arrray map. 
+app.get('/finapi/accounts/map', (request, response) => {
+    const listAccounts = accounts.map((account) => {
+        const { id, name, cpf, statment } = account;
+        return {
+            id,
+            name,
+            cpf,
+            balance: getBalance(statment)
+        }
+    });
+
+    return response.status(200).json({ listAccounts });
+});
+
+// 2# Second option list account.
+app.get('/finapi/accounts/list', (request, response) => {
     return response.status(200).json({ accounts });
 });
+
 
 app.listen(3333, () => {
     console.log('FinAPI is running: http://localhost:3333/finapi');
