@@ -79,6 +79,20 @@ app.get('/finapi/accounts/statment', verifyIfExistsAccount, (request, response) 
     return response.status(200).json({ statment: account.statment });
 });
 
+app.get('/finapi/accounts/statment', verifyIfExistsAccount, (request, response) => {
+    const { account } = request;
+    const { date } = request.query;
+
+    const dateFormat = new Date(date + "00:00 ");
+
+    const statment = account.statment.filter((statment) => {
+        return statment.created_at.toDateString() === new Date(dateFormat).toDateString();
+    });
+
+    return response.status(200).json({ statment });
+});
+
+
 // 1# Firs option list account, with using arrray map. 
 app.get('/finapi/accounts/map', (request, response) => {
     const listAccounts = accounts.map((account) => {
