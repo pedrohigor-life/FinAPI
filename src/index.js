@@ -112,6 +112,24 @@ app.get('/finapi/accounts/list', (request, response) => {
     return response.status(200).json({ accounts });
 });
 
+app.put('/finapi/accounts', verifyIfExistsAccount, (request, response) => {
+    const { account } = request;
+    const { name } = request.query;
+
+    account.name = name;
+
+    return response.status(200).send();
+});
+
+app.delete('/finapi/accounts', (request, response) => {
+    const { account: cpf } = request;
+
+    const indexAccount = accounts.findIndex((account) => account.cpf === cpf);
+
+    accounts.splice(indexAccount, 1);
+
+    return response.status(204).send();
+});
 
 app.listen(3333, () => {
     console.log('FinAPI is running: http://localhost:3333/finapi');
